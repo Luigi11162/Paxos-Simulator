@@ -1,3 +1,7 @@
+from Util import send
+import asyncio
+
+
 class Proposer:
     def __init__(self, i, my_propose):
         self.i = i
@@ -6,17 +10,11 @@ class Proposer:
 
     def init_round(self, majority, time_max):
         self.counter += 1
-        wait_voters = 0
-        last = []
         r = (self.counter, self.i)
         send_propose(r)
         time = 0
-        while wait_voters <= majority:
-            last.append(receive_proposes())
-            counter = max(last)
-            wait_voters += 1
-            if time <= time_max:
-                break
+        last, self.counter = receive_proposes(majority, time_max)
+
         v = max(last)
         if not v:
             v = self.my_propose
@@ -34,18 +32,27 @@ class Proposer:
 
 def send_begin(r, v):
     message = (r, v, "Begin")
+    send(message)
 
 
 def send_propose(r):
     message = (r, "Propose")
+    send(message)
 
 
 def send_success(v):
     message = (v, "Success")
+    send(message)
 
 
-def receive_proposes():
-    return
+def receive_proposes(majority, time_max):
+    wait_voters = 0
+    last = []
+    while wait_voters <= majority:
+        last.append(asyncio.wait(time_max))
+        counter = last
+        wait_voters += 1
+    return last, counter
 
 
 def receive_ack():

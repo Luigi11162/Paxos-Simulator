@@ -1,3 +1,6 @@
+from Util import send
+
+
 class Voter:
     def __init__(self, i, last_v):
         self.i = i
@@ -24,17 +27,19 @@ class Voter:
                 send_old_round(r, self.commit)
 
 
-def send(content, round, type=""):
-    #TODO implement send function
-    pass
-
-
 def send_accept(r):
     message = (r, "Accept")
+    send(message)
 
 
 def send_old_round(r, commit):
     message = (r, "Old Round", commit)
+    send(message)
+
 
 def send_last(r, last_r, last_v):
     message = (r, "Last Round", last_r, last_v)
+    send(message)
+
+
+
