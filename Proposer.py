@@ -12,23 +12,15 @@ class Proposer:
         self.counter += 1
         r = (self.counter, self.i)
         send_propose(r)
-        time = 0
         last, self.counter = receive_proposes(majority, time_max)
-
         v = max(last)
         if not v:
             v = self.my_propose
         send_begin(r, v)
-        wait_voters = 0
-        while wait_voters <= majority:
-            receive_votes(r)
-            wait_voters += 1
-            if time <= time_max:
-                break
-        choose(v, r)
-        send_success(v)
-        receive_ack()
-
+        if  receive_votes(r, majority, time_max):
+            choose(v, r)
+            send_success(v)
+            receive_ack()
 
 def send_begin(r, v):
     message = (r, v, "Begin")
@@ -46,12 +38,8 @@ def send_success(v):
 
 
 def receive_proposes(majority, time_max):
-    wait_voters = 0
-    last = []
-    while wait_voters <= majority:
-        last.append(asyncio.wait(time_max))
-        counter = last
-        wait_voters += 1
+    result = wait_voters(majority, time_max, "receive_proposes")
+    last, counter = result
     return last, counter
 
 
@@ -59,9 +47,24 @@ def receive_ack():
     return
 
 
-def receive_votes(r):
-    return
+def receive_votes(r, majority, time_max):
+    result = wait_voters(majority, time_max, "receive_votes")
+    num_votes = 0
+    for vote in result:
+        if vote == r:
+            num_votes +=1
+    if num_votes >= majority:
+        return True
+    return False
 
 
 def choose(v, r):
     return
+
+def wait_voters(majority, time_max, function):
+    voters = 0
+    result = []
+    while voters <= majority:
+        result.append(asyncio.wait_for(function, time_max))
+        voters += 1
+    return result
