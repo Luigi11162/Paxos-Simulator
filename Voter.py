@@ -1,5 +1,5 @@
-from Util import send
-
+from Main import values
+from Util import MessageTypeVoter, MessageTypeProposer, create_message, send
 
 class Voter:
     def __init__(self, i, last_v):
@@ -10,36 +10,42 @@ class Voter:
 
     def vote(self, message):
         r = message["r"]
-        if message["type"] == "Collect":
+        if message["type"] == MessageTypeProposer.PROPOSE:
             if r >= self.commit:
-                send_last(r, self.last_r, self.last_v)
+                self._send_last(r, self.last_r, self.last_v)
                 self.commit = r
             else:
-                send_old_round(r, self.commit)
+                self._send_old_round(r, self.commit)
 
-        if message["type"] == "Begin":
+        if message["type"] == MessageTypeProposer.BEGIN:
             v = message["v"]
             if r >= self.commit:
-                send_accept(r)
+                self._send_accept(r)
                 self.last_r = r
                 self.last_v = v
             else:
-                send_old_round(r, self.commit)
+                self._send_old_round(r, self.commit)
+        if message["type"] == MessageTypeProposer.SUCCESS:
+            self._send_ack()
 
 
-def send_accept(r):
-    message = (r, "Accept")
-    send(message)
+    def _send_accept(self, r):
+        message = create_message(MessageTypeVoter.ACCEPT, self.i, r)
+        send(message)
 
 
-def send_old_round(r, commit):
-    message = (r, "Old Round", commit)
-    send(message)
+    def _send_old_round(self, r, commit):
+        values = {"r": r, "commit": commit}
+        message = create_message(MessageTypeVoter.OLD_ROUND, self.i, values)
+        send(message)
 
 
-def send_last(r, last_r, last_v):
-    message = (r, "Last Round", last_r, last_v)
-    send(message)
+    def _send_last(self, r, last_r, last_v):
+        message = create_message( MessageTypeVoter.LAST_ROUND,self.i, r, last_r, last_v)
+        send(message)
 
+    def _send_ack(self):
+        message = (MessageTypeVoter.ACK, self.i)
+        send(message)
 
 
