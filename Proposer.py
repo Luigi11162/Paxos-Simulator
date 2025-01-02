@@ -1,6 +1,7 @@
+import time
+
 from Util import send
 import asyncio
-
 
 class Proposer:
     def __init__(self, i, my_propose):
@@ -8,7 +9,8 @@ class Proposer:
         self.my_propose = my_propose
         self.counter = 1
 
-    def init_round(self, majority, time_max):
+
+    def init_round(self, majority, time_max=100000):
         self.counter += 1
         r = (self.counter, self.i)
         send_propose(r)
