@@ -1,6 +1,7 @@
 import time
 from random import randint
 from Proposer import Proposer
+from Util import choose_proposer
 from Voter import Voter
 
 
@@ -9,8 +10,6 @@ values = [1, 2, 3, 4, 5]
 proposer = []
 voter = []
 
-def choose_proposer():
-    return randint(0,nodes-1)
 
 #Imposto le classi dei Voter e Proposer con i valori di partenza
 for i in range(nodes):
@@ -19,6 +18,6 @@ for i in range(nodes):
 
 
 while True:
-    i = choose_proposer()
+    i = choose_proposer(nodes)
     proposer[i].init_round(int(nodes/2))
     time.sleep(randint(10,100))
