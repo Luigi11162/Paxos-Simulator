@@ -7,17 +7,17 @@ from Voter import Voter
 
 nodes = 5
 values = [1, 2, 3, 4, 5]
-proposer = []
-voter = []
+proposers = []
+voters = []
 
 
-#Imposto le classi dei Voter e Proposer con i valori di partenza
+#Istanzio le classi dei Voter e dei Proposer con i valori di partenza
 for i in range(nodes):
-    proposer.append(Proposer(i, values[i]))
-    voter.append(Voter(i, values[i]))
+    proposers.append(Proposer(i, values[i]))
+    voters.append(Voter(i, values[i]))
 
 
 while True:
     i = choose_proposer(nodes)
-    proposer[i].init_round(int(nodes/2))
+    proposers[i].init_round(int(nodes / 2))
     time.sleep(randint(10,100))

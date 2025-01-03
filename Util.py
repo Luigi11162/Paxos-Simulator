@@ -1,5 +1,5 @@
 from random import randint
-from Main import proposer, i
+from Main import proposers, i
 from enum import Enum
 
 class MessageTypeVoter(Enum):
@@ -19,17 +19,17 @@ def create_message(message_type, id_sender, **values):
 async def send(message):
     match message["type"]:
         case MessageTypeVoter.ACCEPT:
-            await proposer[i].receive_accept(message)
+            await proposers[i].receive_accept(message)
         case MessageTypeVoter.OLD_ROUND:
-            await proposer[i].receive_old_round(message)
+            await proposers[i].receive_old_round(message)
         case MessageTypeVoter.LAST_ROUND:
-            await proposer[i].receive_last_round(message)
+            await proposers[i].receive_last_round(message)
         case MessageTypeProposer.BEGIN:
-            await proposer[i].receive_begin(message)
+            await proposers[i].receive_begin(message)
         case MessageTypeProposer.PROPOSE:
-            await proposer[i].receive_propose(message)
+            await proposers[i].receive_propose(message)
         case MessageTypeProposer.SUCCESS:
-            await proposer[i].receive_success(message)
+            await proposers[i].receive_success(message)
         case _:
             raise Exception("Invalid message type")
 
