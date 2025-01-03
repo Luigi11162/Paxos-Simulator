@@ -1,5 +1,4 @@
-from Main import values
-from Util import MessageTypeVoter, MessageTypeProposer, create_message, send
+from Utils import MessageTypeVoter, MessageTypeProposer, create_message, send
 
 class Voter:
     def __init__(self, i, last_v):

@@ -1,7 +1,7 @@
 import time
 from random import randint
 from Proposer import Proposer
-from Util import choose_proposer
+from Utils import choose_proposer
 from Voter import Voter
 
 
@@ -19,5 +19,6 @@ for i in range(nodes):
 
 while True:
     i = choose_proposer(nodes)
-    proposers[i].init_round(int(nodes / 2))
+    #Arrotonda per eccesso il numero di votanti
+    proposers[i].init_round((nodes + 1) // 2)
     time.sleep(randint(10,100))
