@@ -13,38 +13,31 @@ class MessageTypeVoter(Enum):
 
 
 class MessageTypeProposer(Enum):
-    BEGIN = 0
-    PROPOSE = 1
+    COLLECT = 0
+    BEGIN = 1
     SUCCESS = 2
 
 
-def create_message(message_type, id_sender, **values):
-    return {"type": message_type, "sender": id_sender, **values}
+def create_message(message_type, id_sender, values=None):
+    return {"type": message_type, "sender": id_sender, "values": values}
 
 
-async def send(message):
+def send(message):
+    results = {}
     sender = message["sender"]
     for i in range(nodes):
         #Evito un auto_invio
-        if i == sender:
-            continue
+        if i != sender:
+            results[i] = voters[i].vote(message)
 
-        match message["type"]:
-            case MessageTypeVoter.ACCEPT:
-                await proposers[i].receive_accept(message)
-            case MessageTypeVoter.OLD_ROUND:
-                await proposers[i].receive_old_round(message)
-            case MessageTypeVoter.LAST_ROUND:
-                await proposers[i].receive_last_round(message)
-            case MessageTypeProposer.BEGIN:
-                await voters[i].vote(message)
-            case MessageTypeProposer.PROPOSE:
-                await voters[i].vote(message)
-            case MessageTypeProposer.SUCCESS:
-                await voters[i].vote(message)
-            case _:
-                raise TypeError("Invalid message type")
-
+    return results
 
 def choose_proposer(n):
     return randint(0, n - 1)
+
+def compare_rounds(round1, round2):
+    if round1[0] > round2[0]:
+        return 1
+    if round1[0] == round2[0] and round1[1] > round2[1]:
+        return 0
+    return -1
