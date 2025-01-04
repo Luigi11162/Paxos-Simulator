@@ -8,15 +8,17 @@ class Voter:
         self.commit = (0, i)
         
     def vote(self, message):
-        r = message["values"]["r"]
+
         if message["type"] == MessageTypeProposer.COLLECT:
+            r = message["values"]["r"]
             if compare_rounds(r, self.commit)>=0:
-                self._send_last(r, self.last_r, self.last_v)
                 self.commit = r
+                return self._send_last(r, self.last_r, self.last_v)
             else:
                 return self._send_old_round(r, self.commit)
 
         if message["type"] == MessageTypeProposer.BEGIN:
+            r = message["values"]["r"]
             v = message["values"]["v"]
             if compare_rounds(r, self.commit)>=0:
                 self.last_r = r
@@ -30,7 +32,7 @@ class Voter:
 
     def _send_last(self, r, last_r, last_v):
         values = {"r": r, "last_r": last_r, "last_v": last_v}
-        return create_message( MessageTypeVoter.LAST_ROUND,self.i, values)
+        return create_message(MessageTypeVoter.LAST_ROUND, self.i, values)
 
     def _send_old_round(self, r, commit):
         values = {"r": r, "commit": commit}
