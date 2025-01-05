@@ -20,8 +20,8 @@ class MessageTypeProposer(Enum):
     SUCCESS = 2
 
 
-def create_message(message_type, id_sender, values=None):
-    return {"type": message_type, "sender": id_sender, "values": values}
+def create_message(message_type, id_sender, message_values=None):
+    return {"type": message_type, "sender": id_sender, "values": message_values}
 
 
 def choose_proposer(n):
