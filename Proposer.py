@@ -7,10 +7,11 @@ class Proposer:
         self.my_propose = my_propose
         self.counter = 1
 
-    def init_round(self, majority):
+
+    async def init_round(self, majority):
         self.counter += 1
         r = (self.counter, self.i)
-        message_type, last = self._send_collect(r)
+        message_type, last = await self._send_collect(r)
 
         if message_type == MessageTypeVoter.OLD_ROUND:
             self.counter, propose = last
@@ -23,15 +24,16 @@ class Proposer:
             if propose is not None:
                 self.my_propose = propose
 
-        if self._send_begin(r, self.my_propose)>=majority:
-            if self._send_success(last)>=majority:
-                print("Value decided: ", self.my_propose)
+        if await self._send_begin(r, self.my_propose)>=majority:
+            if await self._send_success(last)>=majority:
+                print("Value decided: ", self.i, self.my_propose)
                 return
-        print("Value not decided")
 
-    def _send_collect(self, r):
+        print("Value not decided", self.i, self.my_propose)
+
+    async def _send_collect(self, r):
         message = create_message(MessageTypeProposer.COLLECT, self.i, {"r": r})
-        results = send(message)
+        results = await send(message)
         last = (self.counter, self.i)
 
         for i in range(len(results)):
@@ -50,9 +52,9 @@ class Proposer:
 
         return last
 
-    def _send_begin(self, r, v):
+    async def _send_begin(self, r, v):
         message = create_message(MessageTypeProposer.BEGIN, self.i, {"r": r, "v": v})
-        results = send(message)
+        results = await send(message)
 
         num_accept = 0
         for i in range(len(results)):
@@ -61,9 +63,9 @@ class Proposer:
                     num_accept+=1
         return num_accept
 
-    def _send_success(self, v):
+    async def _send_success(self, v):
         message = create_message(MessageTypeProposer.SUCCESS, self.i, {"v": v})
-        results = send(message)
+        results = await send(message)
         num_ack = 0
         for i in range(len(results)):
             if results[i]["type"] == MessageTypeVoter.ACK:

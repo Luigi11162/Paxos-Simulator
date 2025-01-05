@@ -1,4 +1,5 @@
-from Utils import MessageTypeVoter, MessageTypeProposer, create_message, compare_rounds
+from Utils import MessageTypeVoter, MessageTypeProposer, create_message, compare_rounds, initialize_server
+
 
 class Voter:
     def __init__(self, i, last_v):
@@ -6,9 +7,9 @@ class Voter:
         self.last_r = (0, i)
         self.last_v = last_v
         self.commit = (0, i)
-        
-    def vote(self, message):
 
+
+    def vote(self, message):
         if message["type"] == MessageTypeProposer.COLLECT:
             r = message["values"]["r"]
             if compare_rounds(r, self.commit)>=0:
@@ -27,7 +28,8 @@ class Voter:
             else:
                 return self._send_old_round(r, self.commit)
         if message["type"] == MessageTypeProposer.SUCCESS:
-            return self._send_ack()
+            self._send_ack()
+
 
 
     def _send_last(self, r, last_r, last_v):
