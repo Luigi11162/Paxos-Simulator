@@ -15,7 +15,6 @@ async def main():
             voters.append(Voter(i, values[i]))
             tg.create_task(initialize_server(i))
 
-
     while True:
         i = choose_proposer(nodes)
         #Arrotonda per eccesso il numero di votanti
@@ -24,4 +23,5 @@ async def main():
 
         time.sleep(randint(10, 20))
 
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())

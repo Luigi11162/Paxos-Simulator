@@ -39,7 +39,7 @@ def compare_rounds(round1, round2):
     return -1
 
 
-async def send(message):
+def send(message):
     print(f"Sending message {message}")
     results = []
     sender = message["sender"]
@@ -55,7 +55,7 @@ async def send(message):
     return results
 
 
-async def initialize_server(index, backlog=nodes):
+def initialize_server(index, backlog=nodes):
     indirizzo = (HOST, PORT + index)
     try:
         s = socket.socket()
@@ -63,17 +63,14 @@ async def initialize_server(index, backlog=nodes):
         s.listen(backlog)
         print("Server",index,"Inizializzato. In ascolto...")
         while True:
-            wait_for_message(s, index)
+            print(f"Server {index} in attesa di connessione...")
+            conn, _ = s.accept()
+            result = conn.recv(1024)
+            print(f"Server {index} ha ricevuto il messaggio {result}")
+            result.decode()
+            message = voters[index].vote(result)
+            conn.send(message.encode())
     except socket.error as errore:
         print(f"Qualcosa è andato storto... \n{errore}")
         print("Sto tentando di reinizializzare il server...")
-        await initialize_server(index, backlog)
-
-def wait_for_message(s, index):
-    print(f"Server {index} in attesa di connessione...")
-    conn, _ = s.accept()
-    result = conn.recv(1024)
-    print(f"Server {index} ha ricevuto il messaggio {result}")
-    result.decode()
-    message = voters[index].vote(result)
-    conn.send(message.encode())
+        initialize_server(index, backlog)
