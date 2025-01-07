@@ -61,14 +61,19 @@ async def initialize_server(index, backlog=nodes):
         s = socket.socket()
         s.bind(indirizzo)
         s.listen(backlog)
-        print("Server",index," Inizializzato. In ascolto...")
-        conn, _ = s.accept()
-        result = conn.recv(1024)
-        result.decode()
-        message = voters[index].vote(result)
-        conn.send(message.encode())
+        print("Server",index,"Inizializzato. In ascolto...")
+        while True:
+            wait_for_message(s, index)
     except socket.error as errore:
         print(f"Qualcosa è andato storto... \n{errore}")
         print("Sto tentando di reinizializzare il server...")
-        await initialize_server(indirizzo, backlog=1)
+        await initialize_server(index, backlog)
 
+def wait_for_message(s, index):
+    print(f"Server {index} in attesa di connessione...")
+    conn, _ = s.accept()
+    result = conn.recv(1024)
+    print(f"Server {index} ha ricevuto il messaggio {result}")
+    result.decode()
+    message = voters[index].vote(result)
+    conn.send(message.encode())
