@@ -11,21 +11,16 @@ class Proposer:
     def init_round(self, majority):
         self.counter += 1
         r = (self.counter, self.i)
-        message_type, last = self._send_collect(r)
+        num_last, propose = self._send_collect(r)
 
-        if message_type == MessageTypeVoter.OLD_ROUND:
-            self.counter, propose = last
-            if propose is not None:
-                self.my_propose = propose
+        if num_last < majority:
             return
 
-        if message_type == MessageTypeVoter.LAST_ROUND:
-            _, propose = last
-            if propose is not None:
-                self.my_propose = propose
+        if propose is not None:
+            self.my_propose = propose
 
         if self._send_begin(r, self.my_propose)>=majority:
-            if self._send_success(last)>=majority:
+            if self._send_success(self.my_propose)>=majority:
                 print("Value decided: ", self.i, self.my_propose)
                 return
 
@@ -35,25 +30,19 @@ class Proposer:
         message = create_message(MessageTypeProposer.COLLECT, self.i, {"r": r})
         results = send(message)
         last = (self.counter, self.i)
-
-        for i in range(len(results)):
-            if (results[i]["type"] == MessageTypeVoter.OLD_ROUND and
-                    compare_rounds(results[i]["values"]["r"],r)==0 and
-                    compare_rounds(results[i]["values"]["commit"], last)>=0):
-                    last = (MessageTypeVoter.OLD_ROUND, (results[i]["values"]["r"], results[i]["values"]["commit"]))
-
-        if compare_rounds(last, (self.counter, self.i)) > 0:
-            return last
-
+        propose = self.my_propose
+        num_last = 0
         for i in range(len(results)):
             if results[i]["type"] == MessageTypeVoter.LAST_ROUND:
+                num_last+=1
                 if compare_rounds(results[i]["values"]["r"], last) > 0:
-                    last = (MessageTypeVoter.OLD_ROUND, (results[i]["values"]["last_r"], results[i]["values"]["last_v"]))
+                    last =  results[i]["values"]["r"]
+                    propose = results[i]["values"]["last_v"]
 
-        return last
+        return num_last, propose
 
     def _send_begin(self, r, v):
-        message = create_message(MessageTypeProposer.BEGIN, self.i, {"r": r, "v": v})
+        message = create_message(MessageTypeProposer.BEGIN, self.i,{"r": r, "v": v})
         results = send(message)
 
         num_accept = 0
@@ -61,6 +50,7 @@ class Proposer:
             if results[i]["type"] == MessageTypeVoter.ACCEPT:
                 if compare_rounds(results[i]["values"]["r"], r) == 0:
                     num_accept+=1
+
         return num_accept
 
     def _send_success(self, v):

@@ -28,6 +28,7 @@ class Voter:
             else:
                 return self._send_old_round(r, self.commit)
         if message["type"] == MessageTypeProposer.SUCCESS:
+            self.last_v=message["values"]["v"]
             self._send_ack()
 
 
