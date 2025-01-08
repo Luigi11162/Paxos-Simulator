@@ -1,3 +1,4 @@
+import asyncio
 import socket
 from random import randint
 from enum import Enum
@@ -40,37 +41,44 @@ def compare_rounds(round1, round2):
 
 
 def send(message):
-    print(f"Sending message {message}")
+    print(f"Invio messaggio {message}")
     results = []
     sender = message["sender"]
     for i in range(nodes):
         #Evito un auto_invio
         if i != sender:
-            s = socket.socket()
-            s.connect((HOST, PORT + i))
-            s.send(message)
-            results.append(s.recv(1024))
-            s.close()
+            try:
+                s = socket.socket()
+                s.connect((HOST, PORT + i))
+                s.send(message)
+                results.append(s.recv(1024))
+                s.close()
+            except socket.error as errore:
+                print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
 
     return results
 
 
-def initialize_server(index, backlog=nodes):
-    indirizzo = (HOST, PORT + index)
+async def initialize_server(index, backlog=nodes):
     try:
-        s = socket.socket()
-        s.bind(indirizzo)
-        s.listen(backlog)
+        server = await asyncio.start_server(handle_client, HOST, PORT + index)
         print("Server",index,"Inizializzato. In ascolto...")
-        while True:
-            print(f"Server {index} in attesa di connessione...")
-            conn, _ = s.accept()
-            result = conn.recv(1024)
-            print(f"Server {index} ha ricevuto il messaggio {result}")
-            result.decode()
-            message = voters[index].vote(result)
-            conn.send(message.encode())
+        async with server:
+            await server.serve_forever()
     except socket.error as errore:
         print(f"Qualcosa è andato storto... \n{errore}")
         print("Sto tentando di reinizializzare il server...")
-        initialize_server(index, backlog)
+        await initialize_server(index, backlog)
+
+async def handle_client(reader, writer):
+    addr = writer.get_extra_info('peername')
+    print(f"Connessione da {addr}")
+
+    data = await reader.read(100)
+    print(f"Ricevuto {data.decode()} da {addr}")
+    index, result = data
+    message = voters[index].vote(result)
+    writer.write(message)
+    await writer.drain()
+    print(f"Inviato {message} a {addr}")
+    writer.close()

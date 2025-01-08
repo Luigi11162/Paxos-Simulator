@@ -21,10 +21,10 @@ class Proposer:
 
         if self._send_begin(r, self.my_propose)>=majority:
             if self._send_success(self.my_propose)>=majority:
-                print("Value decided: ", self.i, self.my_propose)
+                print("Valore deciso: ", self.i, self.my_propose)
                 return
 
-        print("Value not decided", self.i, self.my_propose)
+        print("Valore non deciso", self.i, self.my_propose)
 
     def _send_collect(self, r):
         message = create_message(MessageTypeProposer.COLLECT, self.i, {"r": r})
