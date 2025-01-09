@@ -1,6 +1,7 @@
 import asyncio
 import pickle
 import socket
+from random import randint
 
 from Observer import Observer
 from Utils import create_message, compare_rounds
@@ -83,16 +84,17 @@ class Voter(Observer):
 
 
     async def _handle_client(self, reader, writer):
-        data = await reader.read(1000)
-        data = pickle.loads(data)
-        addr = writer.get_extra_info("peername")
-        print(f"Connessione da {addr}")
-        print(f"Ricevuto {data} da {addr}")
-        result = data
-        message = self.vote(result)
-        encoded_message = pickle.dumps(message)
-        writer.write(encoded_message)
-        await writer.drain()
-        print(f"Inviato {message} a {addr}")
-        writer.close()
-        await writer.wait_closed()
+        if randint(0, 3) != 0:
+            data = await reader.read(1000)
+            data = pickle.loads(data)
+            addr = writer.get_extra_info("peername")
+            print(f"Connessione da {addr}")
+            print(f"Ricevuto {data} da {addr}")
+            result = data
+            message = self.vote(result)
+            encoded_message = pickle.dumps(message)
+            writer.write(encoded_message)
+            await writer.drain()
+            print(f"Inviato {message} a {addr}")
+            writer.close()
+            await writer.wait_closed()

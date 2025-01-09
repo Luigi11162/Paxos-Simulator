@@ -1,6 +1,8 @@
 import asyncio
 import pickle
 import socket
+from random import randint
+
 from Utils import create_message, compare_rounds
 from Config import MessageTypeProposer, MessageTypeVoter, HOST, PORT, nodes
 from Voter import Voter
@@ -29,7 +31,7 @@ class Proposer :
                 print(f"Valore deciso: {self._my_propose} al round: {r}")
                 return True
 
-        print("Valore non deciso", self._i, self._my_propose)
+        print(f"Valore non deciso: {self._my_propose} al round: {r}")
 
     async def _send_collect(self, r):
         message = create_message(MessageTypeProposer.COLLECT, self._i, {"r": r})
@@ -75,6 +77,8 @@ class Proposer :
             #Evito un auto_invio
             if i != self._i:
                 try:
+                    if randint(0, 3) == 0:
+                        raise RuntimeError("Errore casuale")
                     reader, writer = await asyncio.open_connection(HOST, PORT + i)
                     print(f"Invio messaggio {message} a nodo {i}")
                     writer.write(encoded_message)
@@ -87,7 +91,11 @@ class Proposer :
                     writer.close()
                     await writer.wait_closed()
                     results.append(data)
-                except socket.error as errore:
+                except  socket.error as errore:
+                    print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
+                except RuntimeError as errore:
+                    print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
+                except Exception as errore:
                     print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
 
         return results
