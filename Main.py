@@ -1,7 +1,9 @@
 import asyncio
 from random import randint
+
+from Config import nodes, proposers, values, voters
 from Proposer import Proposer
-from Utils import choose_proposer, nodes, values, proposers, voters, initialize_server
+from Utils import choose_proposer
 from Voter import Voter
 
 
@@ -12,7 +14,7 @@ async def main():
             print(f"Creo il nodo {i}")
             proposers.append(Proposer(i, values[i]))
             voters.append(Voter(i, values[i]))
-            tg.create_task(initialize_server(i))
+            tg.create_task(voters[i].initialize_server(i))
 
 
         while True:
