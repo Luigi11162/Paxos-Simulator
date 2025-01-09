@@ -1,5 +1,4 @@
 import asyncio
-import time
 from random import randint
 from Proposer import Proposer
 from Utils import choose_proposer, nodes, values, proposers, voters, initialize_server
@@ -16,13 +15,13 @@ async def main():
             tg.create_task(initialize_server(i))
 
 
-    while True:
-        i = choose_proposer(nodes)
-        #Arrotonda per eccesso il numero di votanti
-        print(f"Scelgo il proposer {i}")
-        proposers[i].init_round((nodes + 1) // 2)
+        while True:
+            await asyncio.sleep(randint(2, 10))
+            i = choose_proposer(nodes)
+            #Arrotonda per eccesso il numero di votanti
+            print(f"Scelgo il proposer {i}")
+            tg.create_task(proposers[i].init_round((nodes + 1) // 2))
 
-        await asyncio.sleep(randint(10, 20))
 
 if __name__ == '__main__':
     asyncio.run(main())

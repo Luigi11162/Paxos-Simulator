@@ -40,7 +40,7 @@ def compare_rounds(round1, round2):
     return -1
 
 
-def send(message):
+async def send(message):
     print(f"Invio messaggio {message}")
     results = []
     sender = message["sender"]
@@ -73,8 +73,7 @@ async def initialize_server(index, backlog=nodes):
 async def handle_client(reader, writer):
     addr = writer.get_extra_info('peername')
     print(f"Connessione da {addr}")
-
-    data = await reader.read(100)
+    data = await reader.read()
     print(f"Ricevuto {data.decode()} da {addr}")
     index, result = data
     message = voters[index].vote(result)
