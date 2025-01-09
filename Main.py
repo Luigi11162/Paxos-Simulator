@@ -14,6 +14,7 @@ async def main():
             print(f"Creo il nodo {i}")
             proposers.append(Proposer(i, values[i]))
             voters.append(Voter(i, values[i]))
+            voters[i].attach(proposers[i])
             tg.create_task(voters[i].initialize_server(i))
 
 
