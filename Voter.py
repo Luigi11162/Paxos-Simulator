@@ -78,7 +78,7 @@ class Voter(Observer):
             async with server:
                 await server.serve_forever()
         except socket.error as errore:
-            print(f"Qualcosa è andato storto... \n{errore}")
+            print(f"Qualcosa è andato storto al nodo {self._i} ... \n{errore}")
             print("Sto tentando di reinizializzare il server...")
             await self.initialize_server(backlog)
 
@@ -87,14 +87,13 @@ class Voter(Observer):
         if randint(0, 3) != 0:
             data = await reader.read(1000)
             data = pickle.loads(data)
-            addr = writer.get_extra_info("peername")
-            print(f"Connessione da {addr}")
-            print(f"Ricevuto {data} da {addr}")
+            print(f"Connessione dal nodo {data["sender"]}")
+            print(f"Ricevuto {data} dal nodo {data["sender"]}")
             result = data
             message = self.vote(result)
             encoded_message = pickle.dumps(message)
             writer.write(encoded_message)
             await writer.drain()
-            print(f"Inviato {message} a {addr}")
+            print(f"Inviato {message} al nodo {data["sender"]}")
             writer.close()
             await writer.wait_closed()
