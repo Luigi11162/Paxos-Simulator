@@ -5,7 +5,7 @@ from random import randint
 
 from Observer import Observer
 from Utils import create_message, compare_rounds
-from Config import HOST, PORT,MessageTypeVoter, MessageTypeProposer, nodes
+from Config import HOST, PORT,MessageTypeVoter, MessageTypeProposer
 
 class Voter(Observer):
     def __init__(self, i, last_v):
@@ -71,7 +71,7 @@ class Voter(Observer):
     def _send_ack(self):
         return create_message(MessageTypeVoter.ACK, self._i)
 
-    async def initialize_server(self, backlog=nodes):
+    async def initialize_server(self, backlog=100):
         try:
             server = await asyncio.start_server(self._handle_client, HOST, PORT + self._i)
             print("Server", self._i, "Inizializzato. In ascolto...")

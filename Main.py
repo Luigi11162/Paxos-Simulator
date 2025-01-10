@@ -1,30 +1,33 @@
 import asyncio
-from random import randint
+import tkinter as tk
+from asyncio import TaskGroup
+from tkinter import ttk
 
-from Config import nodes, proposers, values, voters
-from Proposer import Proposer
-from Utils import choose_proposer
-from Voter import Voter
-
-
-async def main():
-    #Istanzio le classi dei Voter e dei Proposer con i valori di partenza
-    async with asyncio.TaskGroup() as tg:
-        for i in range(nodes):
-            print(f"Creo il nodo {i}")
-            proposers.append(Proposer(i, values[i]))
-            voters.append(Voter(i, values[i]))
-            voters[i].attach(proposers[i])
-            tg.create_task(voters[i].initialize_server(i))
+import Paxos
 
 
-        while True:
-            await asyncio.sleep(randint(2, 10))
-            i = choose_proposer(nodes)
-            #Arrotonda per eccesso il numero di votanti
-            print(f"Scelgo il proposer {i}")
-            tg.create_task(proposers[i].init_round((nodes + 1) // 2))
+class App:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Paxos Simulator")
+        self.root.geometry("800x600")
+        self.mainframe = tk.Frame(self.root, background="white")
+        self.mainframe.pack(fill="both", expand=True)
+        self.text = ttk.Label(self.mainframe, text="Benvenuto in Paxos Simulator!", background="white")
+        self.text.grid(row=0, column=0)
+        self.text = ttk.Label(self.mainframe, text="Inserisci il numero di nodi!", background="white")
+        self.text.grid(row=1, column=1)
+        self.set_text_field = ttk.Entry(self.mainframe)
+        self.set_text_field.grid(row=2, column=2)
+        self.set_text_button = ttk.Button(self.mainframe, text="Inserisci il numero di nodi", command=lambda: asyncio.run(self.run_paxos()))
+        self.set_text_button.grid(row=3, column=2)
+        self.root.mainloop()
+
+    async def run_paxos(self):
+        nodes = int(self.set_text_field.get())
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(Paxos.run_paxos(nodes))
 
 
-if __name__ == '__main__':
-    asyncio.run(main())
+if __name__ == "__main__":
+    App()

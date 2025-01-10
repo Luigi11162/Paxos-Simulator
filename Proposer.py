@@ -4,7 +4,7 @@ import socket
 from random import randint
 
 from Utils import create_message, compare_rounds
-from Config import MessageTypeProposer, MessageTypeVoter, HOST, PORT, nodes
+from Config import MessageTypeProposer, MessageTypeVoter, HOST, PORT
 from Voter import Voter
 
 
@@ -14,11 +14,11 @@ class Proposer :
         self._my_propose = my_propose
         self._counter = 0
 
-
-    async def init_round(self, majority):
+    async def init_round(self, num_nodes):
         self._counter += 1
+        majority = (num_nodes + 1) // 2
         r = (self._counter, self._i)
-        num_last, propose = await self._send_collect(r)
+        num_last, propose = await self._send_collect(r, num_nodes)
 
         if num_last < majority:
             return
@@ -26,16 +26,16 @@ class Proposer :
         if propose is not None:
             self._my_propose = propose
 
-        if await self._send_begin(r, self._my_propose)>=majority:
-            await self._send_success(self._my_propose)
+        if await self._send_begin(r, self._my_propose, num_nodes)>=majority:
+            await self._send_success(self._my_propose, num_nodes)
             print(f"Valore deciso: {self._my_propose} al round: {r}")
             return True
 
         print(f"Valore non deciso: {self._my_propose} al round: {r}")
 
-    async def _send_collect(self, r):
+    async def _send_collect(self, r, num_nodes):
         message = create_message(MessageTypeProposer.COLLECT, self._i, {"r": r})
-        results = await self.send(message)
+        results = await self.send(message, num_nodes)
         last = (self._counter, self._i)
         propose = self._my_propose
         num_last = 0
@@ -48,9 +48,9 @@ class Proposer :
 
         return num_last, propose
 
-    async def _send_begin(self, r, v):
+    async def _send_begin(self, r, v, num_nodes):
         message = create_message(MessageTypeProposer.BEGIN, self._i,{"r": r, "v": v})
-        results = await self.send(message)
+        results = await self.send(message, num_nodes)
 
         num_accept = 0
         for i in range(len(results)):
@@ -60,20 +60,19 @@ class Proposer :
 
         return num_accept
 
-    async def _send_success(self, v):
+    async def _send_success(self, v, num_nodes):
         message = create_message(MessageTypeProposer.SUCCESS, self._i, {"v": v})
-        results = await self.send(message)
+        results = await self.send(message, num_nodes)
         num_ack = 0
         for i in range(len(results)):
             if results[i]["type"] == MessageTypeVoter.ACK:
                 num_ack+=1
 
         return num_ack
-
-    async def send(self,message):
+    async def send(self, message, num_nodes):
         results = []
         encoded_message = pickle.dumps(message)
-        for i in range(nodes):
+        for i in range(num_nodes):
             #Evito un auto_invio
             if i != self._i:
                 try:

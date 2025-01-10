@@ -1,6 +1,5 @@
 from enum import Enum
 
-nodes = 5
 values = [1, 2, 3, 4, 5]
 proposers = []
 voters = []
