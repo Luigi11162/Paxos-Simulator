@@ -27,9 +27,9 @@ class Proposer :
             self._my_propose = propose
 
         if await self._send_begin(r, self._my_propose)>=majority:
-            if await self._send_success(self._my_propose):
-                print(f"Valore deciso: {self._my_propose} al round: {r}")
-                return True
+            await self._send_success(self._my_propose)
+            print(f"Valore deciso: {self._my_propose} al round: {r}")
+            return True
 
         print(f"Valore non deciso: {self._my_propose} al round: {r}")
 
