@@ -23,15 +23,25 @@ class App:
         self.set_text_field = ttk.Entry(self.mainframe)
         self.set_text_field.grid(row=1, column=1, sticky="w", pady=5)
 
-        self.set_text_button = ttk.Button(self.mainframe, text="Avvia", command=self.run_paxos)
+        self.set_text_button = ttk.Button(self.mainframe, text="Avvia", command=self.run)
         self.set_text_button.grid(row=2, column=0, columnspan=2, pady=10)
 
-        self.root.mainloop()
+        asyncio.run(self.mainloop())
 
-    def run_paxos(self):
+    async def mainloop(self):
+        async with TaskGroup() as tg:
+            tg.create_task(self.root.mainloop())
+
+    def run(self):
+        asyncio.run(self.run_paxos())
+
+    async def run_paxos(self):
         nodes = int(self.set_text_field.get())
-        asyncio.run(Paxos.run_paxos(nodes))
+        async with TaskGroup() as tg:
+            tg.create_task(Paxos.run_paxos(nodes))
+
+
 
 
 if __name__ == "__main__":
-     App()
+    App()
