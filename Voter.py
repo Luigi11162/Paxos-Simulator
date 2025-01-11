@@ -31,10 +31,17 @@ class Voter(Observer):
 
     @last_v.setter
     def last_v(self, value):
-        if not self._decision:
-            self._last_v = value
-            self.notify()
+        self._last_v = value
+        self.notify()
 
+    @property
+    def decision(self):
+        return self._decision
+
+    @decision.setter
+    def decision(self, value):
+        self._decision = value
+        self.notify()
 
     def vote(self, message):
         if message["type"] == MessageTypeProposer.COLLECT:
