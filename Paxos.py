@@ -1,7 +1,6 @@
 import asyncio
 from random import randint
 
-import Config
 from Config import proposers, values, voters
 from Proposer import Proposer
 from Utils import choose_proposer
@@ -30,4 +29,4 @@ async def run_paxos(num_nodes):
         return
 
 if __name__ == '__main__':
-    asyncio.run(run_paxos())
+    asyncio.run(run_paxos(len(values)))

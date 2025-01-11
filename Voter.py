@@ -14,6 +14,7 @@ class Voter(Observer):
         self._last_r = (0, i)
         self._last_v = last_v
         self._commit = (0, i)
+        self._decision = False
 
     @property
     def last_r(self):
@@ -30,8 +31,10 @@ class Voter(Observer):
 
     @last_v.setter
     def last_v(self, value):
-        self._last_v = value
-        self.notify()
+        if not self._decision:
+            self._last_v = value
+            self.notify()
+
 
     def vote(self, message):
         if message["type"] == MessageTypeProposer.COLLECT:
@@ -53,6 +56,7 @@ class Voter(Observer):
                 return self._send_old_round(r, self._commit)
         if message["type"] == MessageTypeProposer.SUCCESS:
             self.last_v=message["values"]["v"]
+            self._decision = True
             return self._send_ack()
 
 
