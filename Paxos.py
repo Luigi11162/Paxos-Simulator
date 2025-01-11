@@ -1,13 +1,13 @@
 import asyncio
 from random import randint
 
-from Config import proposers, values, voters
+from Config import proposers, voters
 from Proposer import Proposer
 from Utils import choose_proposer
 from Voter import Voter
 
 
-async def run_paxos(num_nodes):
+async def run_paxos(num_nodes, values):
     try:
         #Istanzio le classi dei Voter e dei Proposer con i valori di partenza
         async with asyncio.TaskGroup() as tg:
@@ -28,5 +28,11 @@ async def run_paxos(num_nodes):
         print("Paxos Interrotto!")
         return
 
+def stop_paxos():
+    try:
+        pass
+    except RuntimeError as e:
+        print(f"Paxos non ancora inizializzato {e}")
+
 if __name__ == '__main__':
-    asyncio.run(run_paxos(len(values)))
+    asyncio.run(run_paxos(5, [1, 2, 3, 4, 5]))
