@@ -10,7 +10,8 @@ from Config import HOST, PORT,MessageTypeVoter, MessageTypeProposer
 class Voter(Observer):
     def __init__(self, i, last_v):
         super().__init__()
-        self._i = i
+        self.message_type = None
+        self.i = i
         self._last_r = (0, i)
         self._last_v = last_v
         self._commit = (0, i)
@@ -47,6 +48,8 @@ class Voter(Observer):
         if message["type"] == MessageTypeProposer.COLLECT:
             r = message["values"]["r"]
             if compare_rounds(r, self._commit)>=0:
+                self.message_type = MessageTypeVoter.LAST_ROUND
+                self.notify()
                 self._commit = r
                 return self._send_last(r, self._last_r, self._last_v)
             else:
@@ -56,6 +59,7 @@ class Voter(Observer):
             r = message["values"]["r"]
             v = message["values"]["v"]
             if compare_rounds(r, self._commit)>=0:
+                self.message_type = MessageTypeVoter.ACCEPT
                 self.last_r = r
                 self.last_v = v
                 return self._send_accept(r)
@@ -69,27 +73,27 @@ class Voter(Observer):
 
     def _send_last(self, r, last_r, last_v):
         values = {"r": r, "last_r": last_r, "last_v": last_v}
-        return create_message(MessageTypeVoter.LAST_ROUND, self._i, values)
+        return create_message(MessageTypeVoter.LAST_ROUND, self.i, values)
 
     def _send_old_round(self, r, commit):
         values = {"r": r, "commit": commit}
-        return create_message(MessageTypeVoter.OLD_ROUND, self._i, values)
+        return create_message(MessageTypeVoter.OLD_ROUND, self.i, values)
 
     def _send_accept(self, r):
         values = {"r": r}
-        return create_message(MessageTypeVoter.ACCEPT, self._i, values)
+        return create_message(MessageTypeVoter.ACCEPT, self.i, values)
 
     def _send_ack(self):
-        return create_message(MessageTypeVoter.ACK, self._i)
+        return create_message(MessageTypeVoter.ACK, self.i)
 
     async def initialize_server(self, backlog=100):
         try:
-            server = await asyncio.start_server(self._handle_client, HOST, PORT + self._i)
-            print("Server", self._i, "Inizializzato. In ascolto...")
+            server = await asyncio.start_server(self._handle_client, HOST, PORT + self.i)
+            print("Server", self.i, "Inizializzato. In ascolto...")
             async with server:
                 await server.serve_forever()
         except socket.error as errore:
-            print(f"Qualcosa è andato storto al nodo {self._i} ... \n{errore}")
+            print(f"Qualcosa è andato storto al nodo {self.i} ... \n{errore}")
             print("Sto tentando di reinizializzare il server...")
             await self.initialize_server(backlog)
 
