@@ -40,8 +40,6 @@ class Proposer(Observer) :
     async def _send_collect(self, r, num_nodes):
         message = create_message(MessageTypeProposer.COLLECT, self.i, {"r": r})
         results = await self.send(message, num_nodes)
-        self.message_type = MessageTypeProposer.COLLECT
-        self.notify()
         last = (self.counter, self.i)
         propose = self.my_propose
         num_last = 0
@@ -57,8 +55,6 @@ class Proposer(Observer) :
     async def _send_begin(self, r, v, num_nodes):
         message = create_message(MessageTypeProposer.BEGIN, self.i, {"r": r, "v": v})
         results = await self.send(message, num_nodes)
-        self.message_type = MessageTypeProposer.BEGIN
-        self.notify()
         num_accept = 0
         for i in range(len(results)):
             if results[i]["type"] == MessageTypeVoter.ACCEPT:
@@ -76,7 +72,10 @@ class Proposer(Observer) :
                 num_ack+=1
 
         return num_ack
+
     async def send(self, message, num_nodes):
+        self.message_type = message["type"]
+        self.notify()
         results = []
         encoded_message = pickle.dumps(message)
         for i in range(num_nodes):
@@ -103,7 +102,6 @@ class Proposer(Observer) :
                     print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
                 except Exception as errore:
                     print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
-
         return results
 
     def update(self, subject):

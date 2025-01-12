@@ -116,7 +116,8 @@ class App:
     def draw_propose(self, num_round, value, message_type):
         match message_type:
             case MessageTypeProposer.COLLECT:
-                self.position_row+=1
+                self.position_row += 1
+                print("Entro in Collect:", self.position_row)
                 self.simulation_canvas.create_text(0.5 * self.COL_WIDTH, self.ROW_HEIGHT*(self.position_row+0.5) , text=f"{num_round}", font=("Arial", 10, "bold"))
             case MessageTypeProposer.BEGIN:
                 self.simulation_canvas.create_text(1.5 * self.COL_WIDTH, self.ROW_HEIGHT*(self.position_row+0.5), text=value, font=("Arial", 10, "bold"))
@@ -127,9 +128,9 @@ class App:
     def draw_vote(self, message_type, node):
         match message_type:
             case MessageTypeVoter.LAST_ROUND:
-                self.simulation_canvas.create_rectangle((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*(self.position_row+1), (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*(self.position_row+1.5), fill="blue")
+                self.simulation_canvas.create_rectangle((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*self.position_row, (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*(self.position_row+0.5), fill="blue")
             case MessageTypeVoter.ACCEPT:
-                self.simulation_canvas.create_oval((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*(self.position_row+1), (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*(self.position_row+1.5), fill="red")
+                self.simulation_canvas.create_oval((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*self.position_row, (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*(self.position_row+0.5), fill="red")
     def update(self, subject):
         if isinstance(subject, Voter):
             self.draw_vote(subject.message_type, subject.i)

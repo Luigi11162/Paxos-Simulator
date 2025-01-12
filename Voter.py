@@ -45,11 +45,10 @@ class Voter(Observer):
         self.notify()
 
     def vote(self, message):
+        self.message_type = None
         if message["type"] == MessageTypeProposer.COLLECT:
             r = message["values"]["r"]
             if compare_rounds(r, self._commit)>=0:
-                self.message_type = MessageTypeVoter.LAST_ROUND
-                self.notify()
                 self._commit = r
                 return self._send_last(r, self._last_r, self._last_v)
             else:
@@ -59,7 +58,6 @@ class Voter(Observer):
             r = message["values"]["r"]
             v = message["values"]["v"]
             if compare_rounds(r, self._commit)>=0:
-                self.message_type = MessageTypeVoter.ACCEPT
                 self.last_r = r
                 self.last_v = v
                 return self._send_accept(r)
@@ -73,6 +71,8 @@ class Voter(Observer):
 
     def _send_last(self, r, last_r, last_v):
         values = {"r": r, "last_r": last_r, "last_v": last_v}
+        self.message_type = MessageTypeVoter.LAST_ROUND
+        self.notify()
         return create_message(MessageTypeVoter.LAST_ROUND, self.i, values)
 
     def _send_old_round(self, r, commit):
@@ -81,6 +81,8 @@ class Voter(Observer):
 
     def _send_accept(self, r):
         values = {"r": r}
+        self.message_type = MessageTypeVoter.ACCEPT
+        self.notify()
         return create_message(MessageTypeVoter.ACCEPT, self.i, values)
 
     def _send_ack(self):
