@@ -16,10 +16,13 @@ class App:
     def __init__(self):
         super().__init__()
         self.button_start = None
+        self.decision_label = None
         self.root = tk.Tk()
         self.root.title("Paxos Simulator")
         self.root.geometry("1200x600")
         self.root.configure(bg=self.BACKGROUND)
+
+        self.position_row = 1
 
         self.mainframe = tk.Frame(self.root, background=self.BACKGROUND)
         self.mainframe.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
@@ -27,7 +30,9 @@ class App:
         self.simulation_canvas = tk.Canvas(self.mainframe, bg="white", width=700, height=400)
         self.simulation_canvas.grid(row=0, column=1, rowspan=10, padx=20, pady=20)
 
-        self.position_row = 1
+        self.simulation_scrollbar = ttk.Scrollbar(self.mainframe, orient="vertical", command=self.simulation_canvas.yview)
+        self.simulation_scrollbar.grid(row=0, column=2, rowspan=10, sticky="ns")
+        self.simulation_canvas.configure(yscrollcommand=self.simulation_scrollbar.set)
 
         self.welcome_label = ttk.Label(self.mainframe, text="Benvenuto in Paxos Simulator!", background=self.BACKGROUND,
                                        font=("Helvetica", 18, "bold"), anchor="center")
@@ -104,36 +109,32 @@ class App:
 
 
     def draw_simulation(self, nodes):
-
         headers = ["Numero round", "Valore"] + [i for i in range(nodes)]
         for i, header in enumerate(headers):
             self.simulation_canvas.create_text((i + 0.5) * self.COL_WIDTH, 20, text=header, font=("Arial", 10, "bold"))
 
-    def draw_propose(self, node, num_round, value, message_type):
+    def draw_propose(self, num_round, value, message_type):
         match message_type:
             case MessageTypeProposer.COLLECT:
-                self.position_row +=1
-
+                self.position_row+=1
+                self.simulation_canvas.create_text(0.5 * self.COL_WIDTH, self.ROW_HEIGHT*(self.position_row+0.5) , text=f"{num_round}", font=("Arial", 10, "bold"))
             case MessageTypeProposer.BEGIN:
-                self.simulation_canvas.create_text(0.5 * self.COL_WIDTH, self.ROW_HEIGHT*self.position_row+self.ROW_HEIGHT/2 , text=f"{num_round}", font=("Arial", 10, "bold"))
-                self.simulation_canvas.create_text(1.5 * self.COL_WIDTH, self.ROW_HEIGHT*self.position_row+self.ROW_HEIGHT/2, text=value, font=("Arial", 10, "bold"))
-
-                x1, y1 = (2.5+node) * self.COL_WIDTH, self.ROW_HEIGHT*self.position_row-self.ROW_HEIGHT/2
-                x2, y2 = (2.5+node) * self.COL_WIDTH, self.ROW_HEIGHT*self.position_row
-                self.simulation_canvas.create_line(x1, y1, x2, y2, width=2)
-
+                self.simulation_canvas.create_text(1.5 * self.COL_WIDTH, self.ROW_HEIGHT*(self.position_row+0.5), text=value, font=("Arial", 10, "bold"))
+            case MessageTypeProposer.SUCCESS:
+                self.decision_label=ttk.Label(self.mainframe, text=f"Valore deciso: {value} al round: {num_round}",
+                          background=self.BACKGROUND, font=("Helvetica", 12), foreground="green")
+                self.decision_label.grid(row=11, column=1, pady=10)
     def draw_vote(self, message_type, node):
         match message_type:
             case MessageTypeVoter.LAST_ROUND:
-                self.simulation_canvas.create_rectangle((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*self.position_row, (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*self.position_row+10, fill="blue")
+                self.simulation_canvas.create_rectangle((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*(self.position_row+1), (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*(self.position_row+1.5), fill="blue")
             case MessageTypeVoter.ACCEPT:
-                self.simulation_canvas.create_oval((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*self.position_row, (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*self.position_row+10, fill="red")
-
+                self.simulation_canvas.create_oval((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*(self.position_row+1), (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*(self.position_row+1.5), fill="red")
     def update(self, subject):
         if isinstance(subject, Voter):
             self.draw_vote(subject.message_type, subject.i)
         elif isinstance(subject, Proposer):
-            self.draw_propose(subject.i, subject.r, subject.my_propose, subject.message_type)
+            self.draw_propose((subject.counter, subject.i), subject.my_propose, subject.message_type)
 
 if __name__ == "__main__":
     asyncio.run(App().update_tkinter())

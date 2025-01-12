@@ -14,35 +14,35 @@ class Proposer(Observer) :
         super().__init__()
         self.i = i
         self.my_propose = my_propose
-        self._counter = 0
-        self.r = (self._counter, self.i)
+        self.counter = 0
         self.message_type = None
 
 
     async def init_round(self, num_nodes):
-        self._counter += 1
+        self.counter += 1
         majority = (num_nodes + 1) // 2
-        self.r = (self._counter, self.i)
-        num_last, propose = await self._send_collect(self.r, num_nodes)
+        r = (self.counter, self.i)
+        num_last, propose = await self._send_collect(r, num_nodes)
 
         if num_last < majority:
             return
-        self.message_type = MessageTypeProposer.COLLECT
-        self.notify()
+
         if propose is not None:
             self.my_propose = propose
 
-        if await self._send_begin(self.r, self.my_propose, num_nodes)>=majority:
+        if await self._send_begin(r, self.my_propose, num_nodes)>=majority:
             await self._send_success(self.my_propose, num_nodes)
-            print(f"Valore deciso: {self.my_propose} al round: {self.r}")
+            print(f"Valore deciso: {self.my_propose} al round: {r}")
             return True
 
-        print(f"Valore non deciso: {self.my_propose} al round: {self.r}")
+        print(f"Valore non deciso: {self.my_propose} al round: {r}")
 
     async def _send_collect(self, r, num_nodes):
         message = create_message(MessageTypeProposer.COLLECT, self.i, {"r": r})
         results = await self.send(message, num_nodes)
-        last = (self._counter, self.i)
+        self.message_type = MessageTypeProposer.COLLECT
+        self.notify()
+        last = (self.counter, self.i)
         propose = self.my_propose
         num_last = 0
         for i in range(len(results)):
@@ -57,7 +57,6 @@ class Proposer(Observer) :
     async def _send_begin(self, r, v, num_nodes):
         message = create_message(MessageTypeProposer.BEGIN, self.i, {"r": r, "v": v})
         results = await self.send(message, num_nodes)
-        self.r = r
         self.message_type = MessageTypeProposer.BEGIN
         self.notify()
         num_accept = 0
@@ -109,5 +108,5 @@ class Proposer(Observer) :
 
     def update(self, subject):
         if isinstance(subject, Voter):
-            self._counter = subject.last_r[0]
+            self.counter = subject.last_r[0]
             self.my_propose = subject.last_v
