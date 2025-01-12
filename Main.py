@@ -15,11 +15,9 @@ class App:
 
     def __init__(self):
         super().__init__()
-        self.button_start = None
-        self.decision_label = None
         self.root = tk.Tk()
         self.root.title("Paxos Simulator")
-        self.root.geometry("1200x600")
+        self.root.geometry("1200x700")
         self.root.configure(bg=self.BACKGROUND)
 
         self.position_row = 1
@@ -27,12 +25,23 @@ class App:
         self.mainframe = tk.Frame(self.root, background=self.BACKGROUND)
         self.mainframe.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        self.simulation_canvas = tk.Canvas(self.mainframe, bg="white", width=700, height=400)
-        self.simulation_canvas.grid(row=0, column=1, rowspan=10, padx=20, pady=20)
+        self.is_running_label = ttk.Label(self.mainframe, text="Paxos interrotto", background=self.BACKGROUND,
+                                          foreground="red", font=("Helvetica", 12))
+        self.is_running_label.grid(row=0, column=1, pady=10)
 
-        self.simulation_scrollbar = ttk.Scrollbar(self.mainframe, orient="vertical", command=self.simulation_canvas.yview)
-        self.simulation_scrollbar.grid(row=0, column=2, rowspan=10, sticky="ns")
-        self.simulation_canvas.configure(yscrollcommand=self.simulation_scrollbar.set)
+        self.simulation_canvas = tk.Canvas(self.mainframe, bg="white", width=700, height=400)
+        self.simulation_canvas.grid(row=1, column=1, rowspan=10, padx=20, pady=20)
+
+        self.simulation_vertical_scrollbar = ttk.Scrollbar(self.mainframe, orient=tk.VERTICAL,
+                                                  command=self.simulation_canvas.yview)
+        self.simulation_vertical_scrollbar.grid(row=0, column=2, rowspan=10, sticky=tk.NS)
+
+        self.simulation_horizontal_scrollbar = ttk.Scrollbar(self.mainframe, orient=tk.HORIZONTAL,
+                                                             command=self.simulation_canvas.xview)
+        self.simulation_horizontal_scrollbar.grid(row=12, column=1, sticky="swe")
+
+        self.simulation_canvas.configure(xscrollcommand=self.simulation_horizontal_scrollbar.set,
+                                         yscrollcommand=self.simulation_vertical_scrollbar.set)
 
         self.welcome_label = ttk.Label(self.mainframe, text="Benvenuto in Paxos Simulator!", background=self.BACKGROUND,
                                        font=("Helvetica", 18, "bold"), anchor="center")
@@ -48,12 +57,23 @@ class App:
         self.button_set_nodes = ttk.Button(self.mainframe, text="Conferma", command=self.confirm_nodes)
         self.button_set_nodes.grid(row=3, column=0, pady=10)
 
-        self.button_stop = ttk.Button(self.mainframe, text="Ferma", command=Paxos.stop_paxos)
-        self.button_stop.grid(row=4, column=0, pady=10)
+        self.choose_values_canvas = tk.Canvas(self.mainframe, bg=self.BACKGROUND, width=200, height=300)
+        self.choose_values_canvas.grid(row=5, column=0, rowspan=10, padx=20, pady=20)
 
-        self.invalid_number_label = ttk.Label(self.mainframe, text="Inserire un numero valido", foreground="red",
-                                              background=self.BACKGROUND, font=("Helvetica", 10))
+        self.choose_values_canvas_scrollbar = ttk.Scrollbar(self.mainframe, orient=tk.VERTICAL,
+                                                  command=self.choose_values_canvas.yview)
+        self.choose_values_canvas_scrollbar.grid(row=5, column=0, rowspan=10, sticky="nse")
+        self.choose_values_canvas.configure(yscrollcommand=self.choose_values_canvas_scrollbar.set)
+
+        self.invalid_number_label = ttk.Label(self.choose_values_canvas, text="Inserire un numero valido",
+                                              foreground="red", background=self.BACKGROUND, font=("Helvetica", 10))
+
+        self.button_start = ttk.Button(self.choose_values_canvas, text="Avvia")
+        self.button_stop = ttk.Button(self.choose_values_canvas, text="Ferma", command=self.stop_paxos)
         self.set_values = []
+
+        self.decision_label = ttk.Label(self.mainframe, background=self.BACKGROUND, font=("Helvetica", 12),
+                                        foreground="green")
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.running = True
@@ -73,29 +93,36 @@ class App:
         try:
             self.invalid_number_label.grid_remove()
             [[x[i].grid_remove() for i in range(len(x))] for x in self.set_values]
-            if self.button_start is not None: self.button_start.grid_remove()
+            if self.button_start is not None:
+                self.button_start.grid_remove()
             self.set_values = []
             nodes = int(self.set_text_field.get())
             for i in range(nodes):
-                self.set_values.append((ttk.Label(self.mainframe, text=f"Inserisci il valore del nodo {i}:",
+                self.set_values.append((ttk.Label(self.choose_values_canvas, text=f"Inserisci il valore del nodo {i}:",
                                                   background=self.BACKGROUND),
-                                        ttk.Entry(self.mainframe, font=("Helvetica", 12))))
-                self.set_values[i][0].grid(row=5 + 2 * i, column=0, pady=5, sticky="w")
+                                        ttk.Entry(self.choose_values_canvas, font=("Helvetica", 12))))
+                self.set_values[i][0].grid(row=5 + 2 * i, column=0, pady=5)
                 self.set_values[i][1].grid(row=5 + 2 * i + 1, column=0, pady=5)
-            self.button_start = ttk.Button(self.mainframe, text="Avvia", command=lambda: self.run_paxos(nodes))
+            self.button_start.config(command=lambda: self.run_paxos(nodes))
             self.button_start.grid(row=5 + 2 * nodes, column=0, pady=10)
+            self.button_stop.grid(row=5 + 2 * nodes + 1 , column=0, pady=10)
         except ValueError:
             self.invalid_number_label.grid(row=5, column=0, pady=5)
             return
 
     def run_paxos(self, nodes):
+        self.stop_paxos()
+        self.simulation_canvas.delete(tk.ALL)
+        self.position_row = 1
+        self.decision_label.grid_remove()
+        self.is_running_label.config(text="Paxos in esecuzione", foreground="green")
         values = []
         self.invalid_number_label.grid_remove()
         for i in range(len(self.set_values)):
             try:
                 values.append(int(self.set_values[i][1].get()))
             except ValueError:
-                self.invalid_number_label.grid(row=5 + 2 * i + 1, column=0, pady=5)
+                self.invalid_number_label.grid(row=5 + 2 * i + 1, column=1, pady=5)
                 return
 
         self.draw_simulation(nodes)
@@ -107,6 +134,9 @@ class App:
             voters[i].attach(self)
         asyncio.create_task(Paxos.run_paxos(nodes))
 
+    def stop_paxos(self):
+        self.is_running_label.config(text="Paxos interrotto", foreground="red")
+        Paxos.stop_paxos()
 
     def draw_simulation(self, nodes):
         headers = ["Numero round", "Valore"] + [i for i in range(nodes)]
@@ -118,19 +148,24 @@ class App:
             case MessageTypeProposer.COLLECT:
                 self.position_row += 1
                 print("Entro in Collect:", self.position_row)
-                self.simulation_canvas.create_text(0.5 * self.COL_WIDTH, self.ROW_HEIGHT*(self.position_row+0.5) , text=f"{num_round}", font=("Arial", 10, "bold"))
+                self.simulation_canvas.create_text(0.5 * self.COL_WIDTH, self.ROW_HEIGHT*(self.position_row+0.5),
+                                                   text=f"{num_round}", font=("Arial", 10, "bold"))
             case MessageTypeProposer.BEGIN:
-                self.simulation_canvas.create_text(1.5 * self.COL_WIDTH, self.ROW_HEIGHT*(self.position_row+0.5), text=value, font=("Arial", 10, "bold"))
+                self.simulation_canvas.create_text(1.5 * self.COL_WIDTH, self.ROW_HEIGHT*(self.position_row+0.5),
+                                                   text=value, font=("Arial", 10, "bold"))
             case MessageTypeProposer.SUCCESS:
-                self.decision_label=ttk.Label(self.mainframe, text=f"Valore deciso: {value} al round: {num_round}",
-                          background=self.BACKGROUND, font=("Helvetica", 12), foreground="green")
+                self.decision_label.config(text=f"Valore deciso: {value} al round: {num_round}")
                 self.decision_label.grid(row=11, column=1, pady=10)
     def draw_vote(self, message_type, node):
         match message_type:
             case MessageTypeVoter.LAST_ROUND:
-                self.simulation_canvas.create_rectangle((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*self.position_row, (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*(self.position_row+0.5), fill="blue")
+                self.simulation_canvas.create_rectangle((2.5+node)*self.COL_WIDTH-10,
+                                                        self.ROW_HEIGHT*self.position_row, (2.5+node)*self.COL_WIDTH+10,
+                                                        self.ROW_HEIGHT*(self.position_row+0.5), fill="blue")
             case MessageTypeVoter.ACCEPT:
-                self.simulation_canvas.create_oval((2.5+node)*self.COL_WIDTH-10, self.ROW_HEIGHT*self.position_row, (2.5+node)*self.COL_WIDTH+10, self.ROW_HEIGHT*(self.position_row+0.5), fill="red")
+                self.simulation_canvas.create_oval((2.5+node)*self.COL_WIDTH-10,
+                                                   self.ROW_HEIGHT*self.position_row, (2.5+node)*self.COL_WIDTH+10,
+                                                   self.ROW_HEIGHT*(self.position_row+0.5), fill="red")
     def update(self, subject):
         if isinstance(subject, Voter):
             self.draw_vote(subject.message_type, subject.i)

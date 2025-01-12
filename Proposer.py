@@ -24,16 +24,16 @@ class Proposer(Observer) :
         r = (self.counter, self.i)
         num_last, propose = await self._send_collect(r, num_nodes)
 
-        if num_last < majority:
+        if num_last <= majority:
             return
 
         if propose is not None:
             self.my_propose = propose
 
-        if await self._send_begin(r, self.my_propose, num_nodes)>=majority:
+        if await self._send_begin(r, self.my_propose, num_nodes)>majority:
             await self._send_success(self.my_propose, num_nodes)
             print(f"Valore deciso: {self.my_propose} al round: {r}")
-            return True
+            return
 
         print(f"Valore non deciso: {self.my_propose} al round: {r}")
 
@@ -46,8 +46,8 @@ class Proposer(Observer) :
         for i in range(len(results)):
             if results[i]["type"] == MessageTypeVoter.LAST_ROUND:
                 num_last+=1
-                if compare_rounds(results[i]["values"]["r"], last) > 0:
-                    last =  results[i]["values"]["r"]
+                if compare_rounds(results[i]["values"]["last_r"], last) > 0:
+                    last = results[i]["values"]["last_r"]
                     propose = results[i]["values"]["last_v"]
 
         return num_last, propose
@@ -79,32 +79,29 @@ class Proposer(Observer) :
         results = []
         encoded_message = pickle.dumps(message)
         for i in range(num_nodes):
-            #Evito un auto_invio
-            if i != self.i:
-                try:
-                    if randint(0, 3) == 0:
-                        raise RuntimeError("Errore casuale")
-                    reader, writer = await asyncio.open_connection(HOST, PORT + i)
-                    print(f"Invio messaggio {message} a nodo {i}")
-                    writer.write(encoded_message)
-                    await writer.drain()
-                    print(f"Invio completato a nodo {i}")
+            try:
+                if randint(0, 3) == 0:
+                    raise RuntimeError("Errore casuale")
+                reader, writer = await asyncio.open_connection(HOST, PORT + i)
+                print(f"Invio messaggio {message} a nodo {i}")
+                writer.write(encoded_message)
+                await writer.drain()
+                print(f"Invio completato a nodo {i}")
 
-                    data = await reader.read(1000)
-                    data = pickle.loads(data)
-                    print(f"Ricevuti messaggi: {data}")
-                    writer.close()
-                    await writer.wait_closed()
-                    results.append(data)
-                except  socket.error as errore:
-                    print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
-                except RuntimeError as errore:
-                    print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
-                except Exception as errore:
-                    print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
+                data = await reader.read(1000)
+                data = pickle.loads(data)
+                print(f"Ricevuti messaggi: {data}")
+                writer.close()
+                await writer.wait_closed()
+                results.append(data)
+            except  socket.error as errore:
+                print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
+            except RuntimeError as errore:
+                print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
+            except Exception as errore:
+                print(f"Qualcosa è andato storto con nodo {i}... \n{errore}")
         return results
 
     def update(self, subject):
         if isinstance(subject, Voter):
-            self.counter = subject.last_r[0]
             self.my_propose = subject.last_v

@@ -46,37 +46,37 @@ class Voter(Observer):
 
     def vote(self, message):
         self.message_type = None
-        if message["type"] == MessageTypeProposer.COLLECT:
-            r = message["values"]["r"]
-            if compare_rounds(r, self._commit)>=0:
-                self._commit = r
-                return self._send_last(r, self._last_r, self._last_v)
-            else:
-                return self._send_old_round(r, self._commit)
+        match message["type"]:
+            case MessageTypeProposer.COLLECT:
+                r = message["values"]["r"]
+                if compare_rounds(r, self._commit)>=0:
+                    self._commit = r
+                    return self._send_last(r)
 
-        if message["type"] == MessageTypeProposer.BEGIN:
-            r = message["values"]["r"]
-            v = message["values"]["v"]
-            if compare_rounds(r, self._commit)>=0:
-                self.last_r = r
-                self.last_v = v
-                return self._send_accept(r)
-            else:
-                return self._send_old_round(r, self._commit)
-        if message["type"] == MessageTypeProposer.SUCCESS:
-            self.last_v=message["values"]["v"]
-            self._decision = True
-            return self._send_ack()
+            case MessageTypeProposer.BEGIN:
+                r = message["values"]["r"]
+                v = message["values"]["v"]
+                if compare_rounds(r, self._commit)>=0:
+                    self.last_r = r
+                    self.last_v = v
+                    return self._send_accept(r)
 
+            case MessageTypeProposer.SUCCESS:
+                self.last_v=message["values"]["v"]
+                self._decision = True
+                return self._send_ack()
+            case _:
+                return None
+        return self._send_old_round(r)
 
-    def _send_last(self, r, last_r, last_v):
-        values = {"r": r, "last_r": last_r, "last_v": last_v}
+    def _send_last(self, r):
+        values = {"r": r, "last_r": self.last_r, "last_v": self.last_v}
         self.message_type = MessageTypeVoter.LAST_ROUND
         self.notify()
         return create_message(MessageTypeVoter.LAST_ROUND, self.i, values)
 
-    def _send_old_round(self, r, commit):
-        values = {"r": r, "commit": commit}
+    def _send_old_round(self, r):
+        values = {"r": r, "commit": self._commit}
         return create_message(MessageTypeVoter.OLD_ROUND, self.i, values)
 
     def _send_accept(self, r):

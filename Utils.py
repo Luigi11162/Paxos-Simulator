@@ -15,5 +15,3 @@ def compare_rounds(round1, round2):
     if round1[0] == round2[0] and round1[1] == round2[1]:
         return 0
     return -1
-
-

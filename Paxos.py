@@ -7,7 +7,6 @@ from Utils import choose_proposer
 
 async def run_paxos(num_nodes):
     try:
-        #Istanzio le classi dei Voter e dei Proposer con i valori di partenza
         async with asyncio.TaskGroup() as tg:
             for i in range(num_nodes):
                 tg.create_task(voters[i].initialize_server(num_nodes))
@@ -23,7 +22,8 @@ async def run_paxos(num_nodes):
         return
 
 def stop_paxos():
-    try:
-        pass
-    except RuntimeError as e:
-        print(f"Paxos non ancora inizializzato {e}")
+    for task in asyncio.all_tasks():
+        if task.get_name()!="Task-1":
+            task.cancel()
+    proposers.clear()
+    voters.clear()
