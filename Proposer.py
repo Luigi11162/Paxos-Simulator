@@ -20,22 +20,19 @@ class Proposer(Observer) :
 
     async def init_round(self, num_nodes):
         self.counter += 1
-        majority = int(num_nodes/2)
+        majority = int(num_nodes/2 + 1)
         r = (self.counter, self.i)
         num_last, propose = await self._send_collect(r, num_nodes)
 
-        if num_last <= majority:
+        if num_last < majority:
             return
 
-        if propose is not None:
-            self.my_propose = propose
-
-        if (await self._send_begin(r, self.my_propose, num_nodes))>majority:
-            await self._send_success(self.my_propose, num_nodes)
-            print(f"Valore deciso: {self.my_propose} al round: {r}")
+        if await self._send_begin(r, propose, num_nodes) >= majority:
+            await self._send_success(propose, num_nodes)
+            print(f"Valore deciso: {propose} al round: {r}")
             return
 
-        print(f"Valore non deciso: {self.my_propose} al round: {r}")
+        print(f"Valore non deciso: {propose} al round: {r}")
 
     async def _send_collect(self, r, num_nodes):
         message = create_message(MessageTypeProposer.COLLECT, self.i, {"r": r})
@@ -48,9 +45,9 @@ class Proposer(Observer) :
                 num_last+=1
                 if compare_rounds(results[i]["values"]["last_r"], last) > 0:
                     last = results[i]["values"]["last_r"]
-                    propose = results[i]["values"]["last_v"]
 
         self.counter = last[0]
+
         return num_last, propose
 
     async def _send_begin(self, r, v, num_nodes):
