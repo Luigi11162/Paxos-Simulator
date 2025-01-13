@@ -18,6 +18,15 @@ class Voter(Observer):
         self._decision = False
 
     @property
+    def commit(self):
+        return self._commit
+
+    @commit.setter
+    def commit(self, value):
+        self._commit = value
+        self.notify()
+
+    @property
     def last_r(self):
         return self._last_r
 

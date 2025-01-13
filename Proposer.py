@@ -50,6 +50,7 @@ class Proposer(Observer) :
                     last = results[i]["values"]["last_r"]
                     propose = results[i]["values"]["last_v"]
 
+        self.counter = last[0]
         return num_last, propose
 
     async def _send_begin(self, r, v, num_nodes):
@@ -104,4 +105,5 @@ class Proposer(Observer) :
 
     def update(self, subject):
         if isinstance(subject, Voter):
+            self.counter = subject.commit[0]
             self.my_propose = subject.last_v
