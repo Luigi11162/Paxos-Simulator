@@ -118,7 +118,6 @@ class App:
         self.simulation_canvas.delete(tk.ALL)
         self.position_row = 1
         self.decision_label.grid_remove()
-        self.is_running_label.config(text="Paxos in esecuzione", foreground="green")
         values = []
         self.invalid_number_label.grid_remove()
         for i in range(len(self.set_values)):
@@ -142,6 +141,7 @@ class App:
         Paxos.stop_paxos()
 
     def draw_simulation(self, nodes):
+        self.is_running_label.config(text="Paxos in esecuzione", foreground="green")
         headers = ["Numero round", "Valore"] + [i for i in range(nodes)]
         for i, header in enumerate(headers):
             self.simulation_canvas.create_text((i + 0.5) * self.COL_WIDTH, 20, text=header, font=("Arial", 10, "bold"))
