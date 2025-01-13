@@ -38,7 +38,7 @@ class App:
 
         self.simulation_horizontal_scrollbar = ttk.Scrollbar(self.mainframe, orient=tk.HORIZONTAL,
                                                              command=self.simulation_canvas.xview)
-        self.simulation_horizontal_scrollbar.grid(row=12, column=1, sticky="swe")
+        self.simulation_horizontal_scrollbar.grid(row=11, column=1, sticky=tk.EW)
 
         self.simulation_canvas.configure(xscrollcommand=self.simulation_horizontal_scrollbar.set,
                                          yscrollcommand=self.simulation_vertical_scrollbar.set)
@@ -57,19 +57,22 @@ class App:
         self.button_set_nodes = ttk.Button(self.mainframe, text="Conferma", command=self.confirm_nodes)
         self.button_set_nodes.grid(row=3, column=0, pady=10)
 
-        self.choose_values_canvas = tk.Canvas(self.mainframe, bg=self.BACKGROUND, width=200, height=300)
+        self.choose_values_canvas = tk.Canvas(self.mainframe, bg=self.BACKGROUND, width=200, height=400)
         self.choose_values_canvas.grid(row=5, column=0, rowspan=10, padx=20, pady=20)
 
         self.choose_values_canvas_scrollbar = ttk.Scrollbar(self.mainframe, orient=tk.VERTICAL,
                                                   command=self.choose_values_canvas.yview)
-        self.choose_values_canvas_scrollbar.grid(row=5, column=0, rowspan=10, sticky="nse")
+        self.choose_values_canvas_scrollbar.grid(row=5, column=0, rowspan=10, sticky="nse", padx=70)
         self.choose_values_canvas.configure(yscrollcommand=self.choose_values_canvas_scrollbar.set)
 
-        self.invalid_number_label = ttk.Label(self.choose_values_canvas, text="Inserire un numero valido",
+        self.choose_values_canvas_frame = ttk.Frame(self.choose_values_canvas)
+        self.choose_values_canvas.create_window((0, 0), window=self.choose_values_canvas_frame, anchor='nw')
+
+        self.invalid_number_label = ttk.Label(self.choose_values_canvas_frame, text="Inserire un numero valido",
                                               foreground="red", background=self.BACKGROUND, font=("Helvetica", 10))
 
-        self.button_start = ttk.Button(self.choose_values_canvas, text="Avvia")
-        self.button_stop = ttk.Button(self.choose_values_canvas, text="Ferma", command=self.stop_paxos)
+        self.button_start = ttk.Button(self.choose_values_canvas_frame, text="Avvia")
+        self.button_stop = ttk.Button(self.choose_values_canvas_frame, text="Ferma", command=self.stop_paxos)
         self.set_values = []
 
         self.decision_label = ttk.Label(self.mainframe, background=self.BACKGROUND, font=("Helvetica", 12),
@@ -98,9 +101,9 @@ class App:
             self.set_values = []
             nodes = int(self.set_text_field.get())
             for i in range(nodes):
-                self.set_values.append((ttk.Label(self.choose_values_canvas, text=f"Inserisci il valore del nodo {i}:",
+                self.set_values.append((ttk.Label(self.choose_values_canvas_frame, text=f"Inserisci il valore del nodo {i}:",
                                                   background=self.BACKGROUND),
-                                        ttk.Entry(self.choose_values_canvas, font=("Helvetica", 12))))
+                                        ttk.Entry(self.choose_values_canvas_frame, font=("Helvetica", 12))))
                 self.set_values[i][0].grid(row=5 + 2 * i, column=0, pady=5)
                 self.set_values[i][1].grid(row=5 + 2 * i + 1, column=0, pady=5)
             self.button_start.config(command=lambda: self.run_paxos(nodes))
